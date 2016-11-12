@@ -1,0 +1,20 @@
+Package: cpls
+Type: Package
+Version: 0.0.0.9000
+Title: Compression-based Partial Least Squares Regression (cPLS)
+Description: Compression-based partial least squares regression (cPLS)
+    to learn predictive linear models with high interpretability
+    from massive high-dimensional data.
+Authors@R: c(person("Koji", "Makiyama", email = "hoxo.smile@gmail.com", role = c("cre", "aut")))
+URL: https://github.com/hoxo-m/cpls
+BugReports: https://github.com/hoxo-m/cpls/issues
+License: MIT + file LICENSE
+Imports:
+    utils
+Suggests:
+    dplyr,
+    kernlab,
+    knitr,
+    rmarkdown,
+    testthat
+RoxygenNote: 5.0.1

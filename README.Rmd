@@ -1,0 +1,59 @@
+---
+title: "An R Package for Compression-based Partial Least Squares Regression (cPLS)"
+author: Koji MAKIYAMA (@hoxo_m)
+output: 
+  html_document:
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  message = FALSE
+)
+```
+
+### This package is under construction.
+
+## Examples
+
+```{r}
+library(kernlab)
+library(dplyr)
+
+data(spam)
+
+x <- ifelse(spam %>% select(-starts_with("capital"), -type) > 0, 1, 0)
+y <- as.integer(spam$type) - 1 # 1: spam, 0: nonspam
+
+data <- data.frame(y, x)
+head(data %>% select(y:receive))
+
+d <- split(data, sample(0:1, size = nrow(data), replace = TRUE, prob = c(9, 1)))
+names(d) <- c("train", "test")
+```
+
+```{r}
+library(cpls)
+
+result <- cpls(y ~ ., data = data, ncomp = 4)
+
+pred <- t(result$alpha) %*% t(result$w) %*% t(d$train %>% select(-y)) + result$center
+act <- d$train$y
+RMSE <- sqrt(sum((as.numeric(pred) - as.numeric(act))^2))
+RMSE
+
+table(ifelse(pred >= 0.5, 1, 0), act) %>% prop.table %>% round(2)
+
+pred <- t(result$alpha) %*% t(result$w) %*% t(d$test %>% select(-y)) + result$center
+act <- d$test$y
+RMSE <- sqrt(sum((as.numeric(pred) - as.numeric(act))^2))
+RMSE
+
+table(ifelse(pred >= 0.5, 1, 0), act) %>% prop.table %>% round(2)
+```
+
+## References
+
+[1] Yasuo Tabei, Hiroto Saigo, Yoshihiro Yamanishi, and Simon J. Puglisi, "Scalable partial least squares regression on grammar-compressed data matrices,"  in *Proc. 22nd KDD*, 2016, pp. 1875--1884.
