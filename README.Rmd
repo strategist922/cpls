@@ -56,4 +56,4 @@ table(ifelse(pred >= 0.5, 1, 0), act) %>% prop.table %>% round(2)
 
 ## References
 
-[1] Yasuo Tabei, Hiroto Saigo, Yoshihiro Yamanishi, and Simon J. Puglisi, "Scalable partial least squares regression on grammar-compressed data matrices,"  in *Proc. 22nd KDD*, 2016, pp. 1875--1884.
+[1] Yasuo Tabei, Hiroto Saigo, Yoshihiro Yamanishi, and Simon J. Puglisi, "Scalable partial least squares regression on grammar-compressed data matrices,"  in *Proc. 22nd KDD*, 2016, pp. 1875-1884.
