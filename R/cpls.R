@@ -1,3 +1,10 @@
+#' Compression-based Partial Least Squares Regression (cPLS)
+#'
+#' @param formula formula
+#' @param data data
+#' @param ncomp ncomp
+#' @param verbose verbose
+#'
 #' @importFrom stats model.frame
 #' @export
 cpls <- function(formula, data = NULL, ncomp = 10, verbose = TRUE) {
