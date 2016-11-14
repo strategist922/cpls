@@ -3,15 +3,15 @@ Koji MAKIYAMA (@hoxo_m)
 
 
 
-### This package is under construction.
+## An Example
 
-## Examples
+### Prepare Data
 
 
 ```r
 library(kernlab)
 library(dplyr)
-
+set.seed(71)
 data(spam)
 
 x <- ifelse(spam %>% select(-starts_with("capital"), -type) > 0, 1, 0)
@@ -27,41 +27,46 @@ head(data %>% select(y:receive))
 #> 5 1    0       0   0     0   1    0      1        1     1    1       1
 #> 6 1    0       0   0     0   1    0      0        1     0    0       0
 
-d <- split(data, sample(0:1, size = nrow(data), replace = TRUE, prob = c(9, 1)))
-names(d) <- c("train", "test")
+data <- data %>% sample_n(200)
+
+train_test_indicator <- sample(c("train", "test"), size = nrow(data),
+                               replace = TRUE, prob = c(0.6, 0.4))
+d <- split(data, train_test_indicator)
 ```
+
+### Execute cPLS
 
 
 ```r
 library(cpls)
 
-result <- cpls(y ~ ., data = data, ncomp = 4)
+result <- cpls(y ~ ., data = d$train, ncomp = 3, verbose = FALSE)
 
 pred <- t(result$alpha) %*% t(result$w) %*% t(d$train %>% select(-y)) + result$center
 act <- d$train$y
 RMSE <- sqrt(sum((as.numeric(pred) - as.numeric(act))^2))
 RMSE
-#> [1] 18.60759
+#> [1] 3.750782
 
 table(ifelse(pred >= 0.5, 1, 0), act) %>% prop.table %>% round(2)
 #>    act
 #>        0    1
-#>   0 0.57 0.04
-#>   1 0.03 0.36
+#>   0 0.49 0.04
+#>   1 0.05 0.42
 
 pred <- t(result$alpha) %*% t(result$w) %*% t(d$test %>% select(-y)) + result$center
 act <- d$test$y
 RMSE <- sqrt(sum((as.numeric(pred) - as.numeric(act))^2))
 RMSE
-#> [1] 5.936161
+#> [1] 3.145719
 
 table(ifelse(pred >= 0.5, 1, 0), act) %>% prop.table %>% round(2)
 #>    act
 #>        0    1
-#>   0 0.57 0.04
-#>   1 0.04 0.35
+#>   0 0.67 0.01
+#>   1 0.06 0.26
 ```
 
 ## References
 
-[1] Yasuo Tabei, Hiroto Saigo, Yoshihiro Yamanishi, and Simon J. Puglisi, "Scalable partial least squares regression on grammar-compressed data matrices,"  in *Proc. 22nd KDD*, 2016, pp. 1875--1884.
+[1] Yasuo Tabei, Hiroto Saigo, Yoshihiro Yamanishi, and Simon J. Puglisi, "Scalable partial least squares regression on grammar-compressed data matrices,"  in *Proc. 22nd KDD*, 2016, pp. 1875-1884.
