@@ -1,3 +1,4 @@
+#' @importFrom utils head tail
 #' @export
 GrammarCompressedMatrix <- R6::R6Class(
   "GrammarCompressedMatrix",

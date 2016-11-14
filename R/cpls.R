@@ -1,3 +1,4 @@
+#' @importFrom stats model.frame
 #' @export
 cpls <- function(formula, data = NULL, ncomp = 10, verbose = TRUE) {
   df <- model.frame(formula = formula, data = data)

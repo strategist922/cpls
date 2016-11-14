@@ -11,6 +11,7 @@ BugReports: https://github.com/hoxo-m/cpls/issues
 License: MIT + file LICENSE
 Imports:
     R6,
+    stats,
     utils
 Suggests:
     dplyr,

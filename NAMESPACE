@@ -2,3 +2,6 @@
 
 export(GrammarCompressedMatrix)
 export(cpls)
+importFrom(stats,model.frame)
+importFrom(utils,head)
+importFrom(utils,tail)
