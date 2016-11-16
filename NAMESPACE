@@ -2,6 +2,8 @@
 
 export(GrammarCompressedMatrix)
 export(cpls)
+importFrom(iterators,iread.table)
+importFrom(iterators,iter)
 importFrom(stats,model.frame)
 importFrom(utils,head)
 importFrom(utils,tail)
