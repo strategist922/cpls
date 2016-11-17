@@ -5,10 +5,26 @@
 #' @param ncomp ncomp
 #' @param verbose verbose
 #'
-#' @importFrom stats model.frame
 #' @export
-cpls <- function(formula, data = NULL, ncomp = 10, verbose = TRUE) {
+cpls <- function(formula, data = NULL, headers = NULL, ncomp = 10,
+                 verbose = TRUE) {
+  UseMethod("cpls", object = data)
+}
+
+#' @importFrom stats model.frame
+cpls.default <- function(formula, data, headers, ncomp, verbose) {
+  if (is.null(data)) {
+    data <- parent.frame()
+  }
   df <- model.frame(formula = formula, data = data)
+
+}
+
+cpls.character <- function(formula, data, headers, ncomp) {
+
+}
+
+cpls.matrix <- function(y, x, headers, ncomp, verbose) {
   y <- scale(df[,1], scale = FALSE)
   center <- attr(y, "scaled:center")
   y <- matrix(y)

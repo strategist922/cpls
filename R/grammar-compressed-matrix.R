@@ -35,14 +35,6 @@ GrammarCompressedMatrix <- R6::R6Class(
     },
     .compress = function(input, verbose) {
       if (verbose) message("################## Start Grammar Compression ##################")
-      if (is(input, "matrix")) {
-        iter <- iter(input, by="row")
-      } else if (is(input, "character") && file.exists(input)) {
-        filename <- basename(input)
-        iter <- iread.table(input, header = header, row.names = NULL, verbose = verbose)
-      } else {
-        stop()
-      }
       diff_index_list <- to_diff_index_list(input)
       max_symbol <- max(unlist(diff_index_list))
       new_symbol <- max_symbol + 1L
@@ -91,10 +83,10 @@ GrammarCompressedMatrix <- R6::R6Class(
     }
   ),
   public = list(
-    initialize = function(matrix, verbose = TRUE) {
-      private$.ncol <- ncol(matrix)
-      private$.nrow <- nrow(matrix)
-      private$.compress(matrix, verbose = verbose)
+    initialize = function(input, header = NULL, verbose = TRUE) {
+      private$.ncol <- ncol(input)
+      private$.nrow <- nrow(input)
+      private$.compress(input, header = header, verbose = verbose)
     },
     access_row = function(index) {
       diff_indexs <- as.character(private$.compressed_matrix[[index]])
@@ -151,6 +143,20 @@ GrammarCompressedMatrix <- R6::R6Class(
     }
   )
 )
+
+#' @importFrom iterators iter iread.table
+to_iter <- function(input, header, verbose) {
+  if (is(input, "matrix")) {
+    iter <- iter(input, by="row")
+  } else if (is(input, "character") && file.exists(input)) {
+    iter <- iread.table(input, header = header, row.names = NULL, verbose = verbose)
+  } else if (is(input, "iter")){
+    iter <- input
+  } else {
+    stop()
+  }
+  iter
+}
 
 to_diff_index_list <- function(matrix) {
   index_list <- apply(matrix, 1, function(row) which(row == 1))
