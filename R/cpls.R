@@ -17,7 +17,9 @@ cpls.default <- function(formula, data, headers, ncomp, verbose) {
     data <- parent.frame()
   }
   df <- model.frame(formula = formula, data = data)
-
+  y <- df[, 1]
+  x <- as.matrix(df[, -1])
+  cpls.matrix(y, x, headers, ncomp, verbose)
 }
 
 cpls.character <- function(formula, data, headers, ncomp) {
@@ -25,14 +27,16 @@ cpls.character <- function(formula, data, headers, ncomp) {
 }
 
 cpls.matrix <- function(y, x, headers, ncomp, verbose) {
-  y <- scale(df[,1], scale = FALSE)
+  y <- scale(y, scale = FALSE)
   center <- attr(y, "scaled:center")
   y <- matrix(y)
-  x <- as.matrix(df[, -1])
-  d <- ncol(x)
-  n <- nrow(x)
   gcm <- GrammarCompressedMatrix$new(x, verbose = verbose)
+  cpls.GrammarCompressedMatrix(y, gcm, ncomp, center, verbose)
+}
 
+cpls.GrammarCompressedMatrix <- function(y, gcm, ncomp, center, verbose) {
+  d <- gcm$ncol()
+  n <- gcm$nrow()
   w <- matrix(0, nrow = d, ncol = ncomp)
   t <- matrix(0, nrow = n, ncol = d)
   r <- y
@@ -46,6 +50,7 @@ cpls.matrix <- function(y, x, headers, ncomp, verbose) {
     t[,i] <- t[,i] / sqrt(sum(t[,i]^2))
     r <- r - as.numeric(t(y) %*% t[,i]) * t[,i,drop=FALSE]
   }
-  alpha <- solve(t(w) %*% t(x) %*% x %*% w, t(w) %*% t(x) %*% y)
-  list(alpha=alpha, w=w, x=x, y=y, center=center)
+  # alpha <- solve(t(w) %*% t(x) %*% x %*% w, t(w) %*% t(x) %*% y)
+  alpha <- solve(t(w) %*% gcm_tprod(gcm, gcm_prod(gcm, w)), t(w) %*% gcm_tprod(gcm, y))
+  list(alpha=alpha, w=w, x=gcm, y=y, center=center)
 }

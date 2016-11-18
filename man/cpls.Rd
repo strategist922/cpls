@@ -4,7 +4,7 @@
 \alias{cpls}
 \title{Compression-based Partial Least Squares Regression (cPLS)}
 \usage{
-cpls(formula, data = NULL, ncomp = 10, verbose = TRUE)
+cpls(formula, data = NULL, headers = NULL, ncomp = 10, verbose = TRUE)
 }
 \arguments{
 \item{formula}{formula}

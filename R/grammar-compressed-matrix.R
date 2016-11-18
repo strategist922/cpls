@@ -86,7 +86,7 @@ GrammarCompressedMatrix <- R6::R6Class(
     initialize = function(input, header = NULL, verbose = TRUE) {
       private$.ncol <- ncol(input)
       private$.nrow <- nrow(input)
-      private$.compress(input, header = header, verbose = verbose)
+      private$.compress(input, verbose = verbose)
     },
     access_row = function(index) {
       diff_indexs <- as.character(private$.compressed_matrix[[index]])
@@ -140,6 +140,12 @@ GrammarCompressedMatrix <- R6::R6Class(
         result[i,] <- t(self$access_column(i)) %*% matrix
       }
       result
+    },
+    nrow = function() {
+      private$.nrow
+    },
+    ncol = function() {
+      private$.ncol
     }
   )
 )
