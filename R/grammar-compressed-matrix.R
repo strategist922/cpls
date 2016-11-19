@@ -1,7 +1,6 @@
 #' Grammar Compressed Matrix Class
 #'
 #' @importFrom utils head tail
-#' @importFrom iterators iter iread.table
 #' @export
 GrammarCompressedMatrix <- R6::R6Class(
   "GrammarCompressedMatrix",
@@ -150,6 +149,7 @@ GrammarCompressedMatrix <- R6::R6Class(
   )
 )
 
+#' @importFrom methods is
 #' @importFrom iterators iter iread.table
 to_iter <- function(input, header, verbose) {
   if (is(input, "matrix")) {

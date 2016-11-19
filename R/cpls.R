@@ -12,6 +12,7 @@ cpls <- function(formula, data = NULL, headers = NULL, ncomp = 10,
 }
 
 #' @importFrom stats model.frame
+#' @export
 cpls.default <- function(formula, data, headers, ncomp, verbose) {
   if (is.null(data)) {
     data <- parent.frame()
