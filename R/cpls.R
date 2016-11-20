@@ -27,6 +27,10 @@ cpls.character <- function(formula, data, headers, ncomp) {
 
 }
 
+cpls.iter <- function(formula, data, headers, ncomp) {
+
+}
+
 cpls.matrix <- function(y, x, headers, ncomp, verbose) {
   y <- scale(y, scale = FALSE)
   center <- attr(y, "scaled:center")
