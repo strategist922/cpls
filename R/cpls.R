@@ -30,6 +30,7 @@ cpls <- function(formula, data = NULL, ncomp = 10, verbose = TRUE) {
     t[,i] <- t[,i] / sqrt(sum(t[,i]^2))
     r <- r - as.numeric(t(y) %*% t[,i]) * t[,i,drop=FALSE]
   }
-  alpha <- solve(t(w) %*% t(x) %*% x %*% w, t(w) %*% t(x) %*% y)
+  # alpha <- solve(t(w) %*% t(x) %*% x %*% w, t(w) %*% t(x) %*% y)
+  alpha <- solve(t(w) %*% gcm_tprod(gcm, gcm_prod(gcm, w)), t(w) %*% gcm_tprod(gcm, y))
   list(alpha=alpha, w=w, x=x, y=y, center=center)
 }

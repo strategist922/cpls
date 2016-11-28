@@ -27,7 +27,7 @@ GrammarCompressedMatrix <- R6::R6Class(
     .decode_pairs = function(pairs_str) lapply(strsplit(pairs_str, "-"), as.integer),
     .decode_pair = function(pair_str) private$.decode_pairs(pair_str)[[1]],
     .lossless_counting = function(diff_index_list) {
-      table(Reduce(c, lapply(diff_index_list, private$.encode_pairs)))
+      table(unlist(lapply(diff_index_list, private$.encode_pairs)))
     },
     .replace = function(diff_index_list, replace_pair_str, new_symbol) {
       private$.hash_table[replace_pair_str] <- new_symbol
@@ -74,23 +74,6 @@ GrammarCompressedMatrix <- R6::R6Class(
       private$.hash_table <- character()
       if (verbose) message("################## Finished Grammar Compression ##################")
     },
-    .recursion_bak = function(i, j, Z, u) {
-      if (Z %in% private$.terminal_symbols) {
-        if (u + Z == j) {
-          private$.R <- c(private$.R, i)
-        }
-        return(NULL)
-      }
-      ZLR <- private$.decode_pair(private$.grammer_trees[as.character(Z)])
-      left_score <- u + private$.P[as.character(ZLR[1])]
-      if (left_score == j) {
-
-      }
-      if (u + private$.P[as.character(ZLR[1])] <= j) {
-        private$.recursion(i, j, ZLR[1], u)
-      }
-      private$.recursion(i, j, ZLR[2], u + private$.P[as.character(ZLR[1])])
-    },
     .recursion = function(i, j, Z, u) {
       if (Z %in% private$.terminal_symbols) {
         if (u + Z == j) {
@@ -98,10 +81,10 @@ GrammarCompressedMatrix <- R6::R6Class(
         }
         return(NULL)
       }
-      # if (u + private$.P[as.character(Z)] == j) {
-      #   private$.R <- c(private$.R, i)
-      #   return(NULL)
-      # }
+      if (u + private$.P[as.character(Z)] == j) {
+        private$.R <- c(private$.R, i)
+        return(NULL)
+      }
       ZLR <- private$.decode_pair(private$.grammer_trees[as.character(Z)])
       left_score <- u + private$.P[as.character(ZLR[1])]
       if (left_score == j) {
@@ -125,11 +108,6 @@ GrammarCompressedMatrix <- R6::R6Class(
       uncompress <- function(diff_indexs) {
         diff_indexs <- as.character(diff_indexs)
         unlist(lapply(diff_indexs, function(x) {
-          # if (x %in% names(private$.grammer_trees)) {
-          #   uncompress(private$.decode_pair(private$.grammer_trees[x]))
-          # } else {
-          #   x
-          # }
           if (x %in% private$.terminal_symbols) {
             x
           } else {
@@ -147,16 +125,16 @@ GrammarCompressedMatrix <- R6::R6Class(
       for (i in seq_len(private$.nrow)) {
         row <- private$.compressed_matrix[[i]]
         u <- c(0L, cumsum(private$.P[as.character(row)]))
-        # if (any(u == index)) {
-        #   private$.R <- c(private$.R, i)
-        # } else {
+        if (any(u == index)) {
+          private$.R <- c(private$.R, i)
+        } else {
           for (q in seq_along(row)) {
             if (index <= u[q+1]) {
               private$.recursion(i, index, row[q], u[q])
               break
             }
           }
-        # }
+        }
       }
       column <- integer(private$.nrow)
       column[private$.R] <- 1L

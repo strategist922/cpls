@@ -5,6 +5,7 @@ library(kernlab)
 data(spam)
 
 test_that("cpls", {
+  set.seed(71)
   x <- ifelse(spam %>% select(-starts_with("capital"), -type) > 0, 1, 0)
   y <- as.integer(spam$type) - 1 # 1: spam, 0: nonspam
 
