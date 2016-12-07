@@ -47,6 +47,7 @@ library(cpls)
 model <- cpls(y ~ ., data = d$train, ncomp = 3, verbose = FALSE)
 
 pred <- predict(model, d$train)
+pred <- ifelse(pred > 0.5, 1, 0)
 act <- d$train$y
 
 table(pred, act) %>% prop.table %>% round(2)
@@ -56,6 +57,7 @@ table(pred, act) %>% prop.table %>% round(2)
 #>    1 0.05 0.42
 
 pred <- predict(model, d$test)
+pred <- ifelse(pred > 0.5, 1, 0)
 act <- d$test$y
 
 table(pred, act) %>% prop.table %>% round(2)
