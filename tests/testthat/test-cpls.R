@@ -12,9 +12,9 @@ test_that("cpls", {
   data <- data.frame(y, x)
   data <- data %>% sample_n(100)
 
-  result <- cpls(y ~ ., data = data, ncomp = 3, verbose = FALSE)
+  model <- cpls(y ~ ., data = data, ncomp = 3, verbose = FALSE)
 
-  pred <- t(result$alpha) %*% t(result$w) %*% t(data %>% select(-y)) + result$center
+  pred <- predict(model, data)
   act <- data$y
 
   print(table(ifelse(pred >= 0.5, 1, 0), act) %>% prop.table %>% round(2))

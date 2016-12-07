@@ -44,31 +44,25 @@ d <- split(data, train_test_indicator)
 ```r
 library(cpls)
 
-result <- cpls(y ~ ., data = d$train, ncomp = 3, verbose = FALSE)
+model <- cpls(y ~ ., data = d$train, ncomp = 3, verbose = FALSE)
 
-pred <- t(result$alpha) %*% t(result$w) %*% t(d$train %>% select(-y)) + result$center
+pred <- predict(model, d$train)
 act <- d$train$y
-RMSE <- sqrt(sum((as.numeric(pred) - as.numeric(act))^2))
-RMSE
-#> [1] 3.750782
 
-table(ifelse(pred >= 0.5, 1, 0), act) %>% prop.table %>% round(2)
-#>    act
-#>        0    1
-#>   0 0.49 0.04
-#>   1 0.05 0.42
+table(pred, act) %>% prop.table %>% round(2)
+#>     act
+#> pred    0    1
+#>    0 0.49 0.04
+#>    1 0.05 0.42
 
-pred <- t(result$alpha) %*% t(result$w) %*% t(d$test %>% select(-y)) + result$center
+pred <- predict(model, d$test)
 act <- d$test$y
-RMSE <- sqrt(sum((as.numeric(pred) - as.numeric(act))^2))
-RMSE
-#> [1] 3.145719
 
-table(ifelse(pred >= 0.5, 1, 0), act) %>% prop.table %>% round(2)
-#>    act
-#>        0    1
-#>   0 0.67 0.01
-#>   1 0.06 0.26
+table(pred, act) %>% prop.table %>% round(2)
+#>     act
+#> pred    0    1
+#>    0 0.67 0.01
+#>    1 0.06 0.26
 ```
 
 ## References

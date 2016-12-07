@@ -1,6 +1,5 @@
 #' Grammar Compressed Matrix Class
 #'
-#' @importFrom utils head tail
 #' @export
 GrammarCompressedMatrix <- R6::R6Class(
   "GrammarCompressedMatrix",
@@ -23,15 +22,9 @@ GrammarCompressedMatrix <- R6::R6Class(
         }
       })
     },
-    .encode_pairs = function(pairs) paste(head(pairs, -1), tail(pairs, -1), sep="-"),
-    .decode_pairs = function(pairs_str) lapply(strsplit(pairs_str, "-"), as.integer),
-    .decode_pair = function(pair_str) private$.decode_pairs(pair_str)[[1]],
-    .lossless_counting = function(diff_index_list) {
-      table(unlist(lapply(diff_index_list, private$.encode_pairs)))
-    },
     .replace = function(diff_index_list, replace_pair_str, new_symbol) {
       private$.hash_table[replace_pair_str] <- new_symbol
-      replaces <- private$.decode_pair(replace_pair_str)
+      replaces <- decode_pair(replace_pair_str)
       lapply(diff_index_list, function(vec) {
         n <- length(vec)
         result <- integer(0)
@@ -48,17 +41,20 @@ GrammarCompressedMatrix <- R6::R6Class(
         Filter(function(x) x >= 0, result)
       })
     },
-    .compress = function(matrix, verbose) {
-      if (verbose) message("################## Start Grammar Compression ##################")
+    .compress = function(matrix, re_pair_method, verbose) {
+      if (verbose) message("################## Grammar Compression ##################")
       diff_index_list <- private$.to_diff_index_list(matrix)
       max_symbol <- max(unlist(diff_index_list))
       new_symbol <- max_symbol + 1L
-      if (verbose) progress_bar <- txtProgressBar(0, max_symbol-1, style=3)
+      if (verbose) progress_bar <- txtProgressBar(0, max_symbol, style=3)
+      counting <- switch(re_pair_method, lossless=lossless_counting, lossy=lossy_counting,
+                         freq=freq_counting)
       while(TRUE) {
-        counts <- private$.lossless_counting(diff_index_list)
+        counts <- counting(diff_index_list, max_hash_size=private$.ncol, l = private$.nrow)
         max_pair <- counts[which.max(counts)]
         if (verbose) setTxtProgressBar(progress_bar, max_symbol - max_pair)
         if (max_pair == 1) break
+        # if (max_pair == 2) break
         replace_pair <- names(max_pair)
         diff_index_list <- private$.replace(diff_index_list, replace_pair, new_symbol)
         new_symbol <- new_symbol + 1
@@ -68,11 +64,11 @@ GrammarCompressedMatrix <- R6::R6Class(
       private$.terminal_symbols <- P <- seq_len(max_symbol)
       names(P) <- P
       for (i in names(private$.grammer_trees)) {
-        P[i] <- sum(P[private$.decode_pair(private$.grammer_trees[i])])
+        P[i] <- sum(P[decode_pair(private$.grammer_trees[i])])
       }
       private$.P <- P
       private$.hash_table <- character()
-      if (verbose) message("################## Finished Grammar Compression ##################")
+      if (verbose) setTxtProgressBar(progress_bar, max_symbol)
     },
     .recursion = function(i, j, Z, u) {
       if (Z %in% private$.terminal_symbols) {
@@ -85,7 +81,7 @@ GrammarCompressedMatrix <- R6::R6Class(
         private$.R <- c(private$.R, i)
         return(NULL)
       }
-      ZLR <- private$.decode_pair(private$.grammer_trees[as.character(Z)])
+      ZLR <- decode_pair(private$.grammer_trees[as.character(Z)])
       left_score <- u + private$.P[as.character(ZLR[1])]
       if (left_score == j) {
         private$.R <- c(private$.R, i)
@@ -98,10 +94,10 @@ GrammarCompressedMatrix <- R6::R6Class(
     }
   ),
   public = list(
-    initialize = function(matrix, verbose = TRUE) {
+    initialize = function(matrix, re_pair_method, verbose = TRUE) {
       private$.ncol <- ncol(matrix)
       private$.nrow <- nrow(matrix)
-      private$.compress(matrix, verbose = verbose)
+      private$.compress(matrix, re_pair_method = re_pair_method, verbose = verbose)
     },
     access_row = function(index) {
       diff_indexs <- as.character(private$.compressed_matrix[[index]])
@@ -111,7 +107,7 @@ GrammarCompressedMatrix <- R6::R6Class(
           if (x %in% private$.terminal_symbols) {
             x
           } else {
-            uncompress(private$.decode_pair(private$.grammer_trees[x]))
+            uncompress(decode_pair(private$.grammer_trees[x]))
           }
         }))
       }
@@ -158,3 +154,67 @@ GrammarCompressedMatrix <- R6::R6Class(
     }
   )
 )
+
+encode_pairs <- function(pairs) {
+  paste(pairs[-length(pairs)], pairs[-1], sep="-")
+}
+
+decode_pairs <- function(pairs_str) {
+  lapply(strsplit(pairs_str, "-"), as.integer)
+}
+
+decode_pair <- function(pair_str) {
+  decode_pairs(pair_str)[[1]]
+}
+
+lossless_counting <- function(diff_index_list, ...) {
+  table(Reduce(c, lapply(diff_index_list, encode_pairs)))
+}
+
+lossy_counting <- function(diff_index_list, l=length(diff_index_list), ...) {
+  pairs <- unlist(lapply(diff_index_list, encode_pairs))
+
+  if (length(pairs) <= length(diff_index_list) * 2) return(lossless_counting(diff_index_list))
+
+  N <- 0
+  H <- new.env(hash = TRUE, size = length(pairs), parent = emptyenv())
+  delta <- 0
+  for (pair_name in pairs) {
+    N <- N + 1
+    if (exists(pair_name, envir = H)) {
+      assign(pair_name, get(pair_name, envir = H) + 1, envir = H)
+    } else {
+      assign(pair_name, delta + 1, envir = H)
+    }
+    if (floor(N / l) != delta) {
+      delta <- floor(N / l)
+      H <- as.list(H)
+      H[H < delta] <- NULL
+      H <- as.environment(H)
+    }
+  }
+  unlist(as.list(H))
+}
+
+freq_counting <- function(diff_index_list, max_hash_size, vacancy_rate = 0.3, ...) {
+  pairs <- unlist(lapply(diff_index_list, encode_pairs))
+  H <- new.env(hash = TRUE, size = length(pairs), parent = emptyenv())
+  for (pair_name in pairs) {
+    if (exists(pair_name, envir = H)) {
+      assign(pair_name, get(pair_name, envir = H) + 1, envir = H)
+    } else {
+      hash_size <- length(ls(envir = H))
+      if (hash_size >= max_hash_size) {
+        while (max_hash_size * (1 - vacancy_rate) < hash_size) {
+          H <- lapply(as.list(H), function(x) x-1)
+          H[H == 0] <- NULL
+          H <- as.environment(H)
+          hash_size <- length(ls(envir = H))
+        }
+      } else {
+        assign(pair_name, 1, envir = H)
+      }
+    }
+  }
+  unlist(as.list(H))
+}
