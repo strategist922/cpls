@@ -22,23 +22,39 @@ GrammarCompressedMatrix <- R6::R6Class(
         }
       })
     },
-    .replace = function(diff_index_list, replace_pair_str, new_symbol) {
-      private$.hash_table[replace_pair_str] <- new_symbol
-      replaces <- decode_pair(replace_pair_str)
+    .replace = function(diff_index_list, replace_pair_strs, new_symbols) {
+      for (i in seq_along(replace_pair_strs)) {
+        private$.hash_table[replace_pair_strs[i]] <- new_symbols[i]
+      }
+      replaces <- decode_pairs(replace_pair_strs)
+      first_symbols <- vapply(replaces, function(pair) pair[1], integer(1))
+      second_symbols <- vapply(replaces, function(pair) pair[2], integer(1))
       lapply(diff_index_list, function(vec) {
         n <- length(vec)
-        result <- integer(0)
-        i <- 1
-        while (i <= n) {
-          if (i < n && vec[i] == replaces[1] && vec[i+1] == replaces[2]) {
-            result <- c(result, new_symbol)
-            i <- i + 1
-          } else {
-            result <- c(result, vec[i])
+        if (n <= 1) return(vec)
+        result <- integer(n)
+        res_ind <- 1
+
+        skip <- FALSE
+        for (i in seq_len(n-1)) {
+          if (skip) {
+            skip <- FALSE
+            next
           }
-          i <- i + 1
+          w <- which(vec[i] == first_symbols & vec[i+1] == second_symbols)
+          if (length(w) == 0) {
+            result[res_ind] <- vec[i]
+            if (i == n - 1) {
+              res_ind <- res_ind + 1
+              result[res_ind] <- vec[i+1]
+            }
+          } else {
+            result[res_ind] <- new_symbols[w]
+            skip <- TRUE
+          }
+          res_ind <- res_ind + 1
         }
-        Filter(function(x) x >= 0, result)
+        result[seq_len(res_ind-1)]
       })
     },
     .compress = function(matrix, re_pair_method, verbose) {
@@ -47,17 +63,18 @@ GrammarCompressedMatrix <- R6::R6Class(
       max_symbol <- max(unlist(diff_index_list))
       new_symbol <- max_symbol + 1L
       if (verbose) progress_bar <- txtProgressBar(0, max_symbol, style=3)
-      counting <- switch(re_pair_method, lossless=lossless_counting, lossy=lossy_counting,
-                         freq=freq_counting)
+      counting <- switch(re_pair_method, lossy=lossy_counting, freq=freq_counting, lossless_counting)
+      k <- switch(re_pair_method, naive=1, max_symbol)
       while(TRUE) {
         counts <- counting(diff_index_list, max_hash_size=private$.ncol, l = private$.nrow)
-        max_pair <- counts[which.max(counts)]
+        counts <- rev(sort(counts))
+        max_pair <- counts[1]
         if (verbose) setTxtProgressBar(progress_bar, max_symbol - max_pair)
         if (max_pair == 1) break
-        # if (max_pair == 2) break
-        replace_pair <- names(max_pair)
-        diff_index_list <- private$.replace(diff_index_list, replace_pair, new_symbol)
-        new_symbol <- new_symbol + 1
+        k_d <- min(k, sum(counts > 1))
+        replace_pairs <- names(counts[seq_len(k_d)])
+        diff_index_list <- private$.replace(diff_index_list, replace_pairs, new_symbol:(new_symbol+k_d-1))
+        new_symbol <- new_symbol + k_d
       }
       private$.compressed_matrix <- diff_index_list
       private$.grammer_trees <- setNames(names(private$.hash_table), private$.hash_table)
