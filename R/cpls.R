@@ -9,7 +9,7 @@
 #' @importFrom stats model.frame
 #' @export
 cpls <- function(formula, data = NULL, ncomp = 10,
-                 re_pair_method = c("freq", "naive", "lossless", "lossy"),
+                 re_pair_method = c("freq", "plain", "lossless", "lossy"),
                  verbose = TRUE) {
   re_pair_method <- match.arg(re_pair_method)
   df <- model.frame(formula = formula, data = data)

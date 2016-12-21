@@ -44,14 +44,14 @@ GrammarCompressedMatrix <- R6::R6Class(
           w <- which(vec[i] == first_symbols & vec[i+1] == second_symbols)
           if (length(w) == 0) {
             result[res_ind] <- vec[i]
-            if (i == n - 1) {
-              res_ind <- res_ind + 1
-              result[res_ind] <- vec[i+1]
-            }
           } else {
             result[res_ind] <- new_symbols[w]
             skip <- TRUE
           }
+          res_ind <- res_ind + 1
+        }
+        if (!skip) {
+          result[res_ind] <- vec[n]
           res_ind <- res_ind + 1
         }
         result[seq_len(res_ind-1)]
@@ -64,7 +64,7 @@ GrammarCompressedMatrix <- R6::R6Class(
       new_symbol <- max_symbol + 1L
       if (verbose) progress_bar <- txtProgressBar(0, max_symbol, style=3)
       counting <- switch(re_pair_method, lossy=lossy_counting, freq=freq_counting, lossless_counting)
-      k <- switch(re_pair_method, naive=1, max_symbol)
+      k <- switch(re_pair_method, plain=1, max_symbol)
       while(TRUE) {
         counts <- counting(diff_index_list, max_hash_size=private$.ncol, l = private$.nrow)
         counts <- rev(sort(counts))
